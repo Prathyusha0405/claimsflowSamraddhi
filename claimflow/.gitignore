@@ -1,0 +1,19 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+# Angular / Node
+node_modules/
+web/claimflow-web/dist/
+web/claimflow-web/.angular/
+# Runtime data (each service's durable store) + logs + pids
+data/
+logs/
+.run/
+# Local Kafka distribution downloaded by scripts/kafka
+scripts/kafka/.kafka/
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/

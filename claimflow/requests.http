@@ -1,0 +1,247 @@
+### ClaimFlow API — manual request collection
+### Works with VS Code's "REST Client" extension or JetBrains' built-in HTTP client.
+### Everything goes through the gateway on :5100 — never call the service ports directly from the browser/UI,
+### they skip authentication enforcement and CORS that the gateway provides.
+###
+### Flow: run "Login" first, copy the token into @token below, then run anything else.
+
+@gateway = http://localhost:5100/api
+@token = PASTE_TOKEN_HERE
+
+### 1. Demo accounts (public — no token needed). Same password for everyone.
+GET {{gateway}}/identity/demo-users
+
+### 2. Login as a claimant
+# @name loginClaimant
+POST {{gateway}}/identity/login
+Content-Type: application/json
+
+{
+  "email": "mei.tan@claimflow.demo",
+  "password": "Demo@123"
+}
+
+### 3. Login as a claims officer (authority: USD 10,000)
+# @name loginOfficer
+POST {{gateway}}/identity/login
+Content-Type: application/json
+
+{
+  "email": "arjun.nair@claimflow.demo",
+  "password": "Demo@123"
+}
+
+### 4. Login as the claims manager (unlimited authority)
+# @name loginManager
+POST {{gateway}}/identity/login
+Content-Type: application/json
+
+{
+  "email": "sofia.reyes@claimflow.demo",
+  "password": "Demo@123"
+}
+
+### 5. Who am I?
+GET {{gateway}}/identity/me
+Authorization: Bearer {{token}}
+
+
+### ───────────────────────── Claimant journey ─────────────────────────
+
+### 6. My policies (claimant)
+GET {{gateway}}/policies/mine
+Authorization: Bearer {{token}}
+
+### 7. Submit a claim (claimant). Use a policy number from #6.
+POST {{gateway}}/claims
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "policyNumber": "SG-MTR-100201",
+  "type": "Motor",
+  "incidentDate": "2026-10-20",
+  "incidentLocation": "PIE near Toa Payoh exit",
+  "description": "Another car merged into my lane and scraped the whole passenger side.",
+  "claimedAmount": 4200,
+  "motor": {
+    "vehicleRegistration": "SLX 4821 P",
+    "thirdPartyInvolved": true,
+    "injuryInvolved": false,
+    "policeReportNumber": null,
+    "drivable": true
+  }
+}
+
+### 8. My claims (claimant)
+GET {{gateway}}/claims/mine
+Authorization: Bearer {{token}}
+
+### 9. One claim's detail — replace {id} with an id from #8
+GET {{gateway}}/claims/{id}
+Authorization: Bearer {{token}}
+
+### 10. Reply to an officer's information request — replace {id} and {requestId}
+POST {{gateway}}/claims/{id}/information-requests/{requestId}/respond
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "response": "Photo attached via email, workshop estimate is SGD 3,800."
+}
+
+### 11. Withdraw a claim
+POST {{gateway}}/claims/{id}/withdraw
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Sorted it out privately with the other party."
+}
+
+
+### ───────────────────────── Claims officer journey ─────────────────────────
+
+### 12. The unassigned queue (most urgent, then oldest)
+GET {{gateway}}/claims/queue
+Authorization: Bearer {{token}}
+
+### 12b. Queue filtered by market / type / priority
+GET {{gateway}}/claims/queue?market=SG&type=Motor&priority=Urgent
+Authorization: Bearer {{token}}
+
+### 13. Pick up a claim — replace {id}
+POST {{gateway}}/claims/{id}/pickup
+Authorization: Bearer {{token}}
+
+### 14. My open work
+GET {{gateway}}/claims/my-work
+Authorization: Bearer {{token}}
+
+### 15. Request information from the claimant
+POST {{gateway}}/claims/{id}/request-information
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "question": "Could you upload the repair quotation or a clear photo of the damage?"
+}
+
+### 16. Record an assessment
+POST {{gateway}}/claims/{id}/assess
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assessedLoss": 4000,
+  "coveredPercent": 100,
+  "notes": "Verified against the workshop estimate."
+}
+
+### 17. Approve (fails with 422 AUTHORITY_LIMIT if above the officer's limit — try with a large assessedLoss in #16)
+POST {{gateway}}/claims/{id}/approve
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "notes": "Within policy terms."
+}
+
+### 18. Decline a claim instead
+POST {{gateway}}/claims/{id}/reject
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "The damage is the result of gradual wear and tear, which is excluded under your policy wording."
+}
+
+### 19. Issue payment (after approval)
+POST {{gateway}}/claims/{id}/settle
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "paymentReference": ""
+}
+
+### 20. Add an internal note (never shown to the claimant)
+POST {{gateway}}/claims/{id}/notes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "text": "Spoke to the workshop — estimate looks consistent with the photos."
+}
+
+### 21. Search / browse all claims (staff)
+GET {{gateway}}/claims?status=Assessed&page=1&pageSize=25
+Authorization: Bearer {{token}}
+
+### 22. Reassign a claim to another officer (manager only) — replace {id}
+POST {{gateway}}/claims/{id}/assign
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "officerId": "o-002"
+}
+
+### 23. Staff directory (for the assign picker)
+GET {{gateway}}/identity/staff
+Authorization: Bearer {{token}}
+
+
+### ───────────────────────── Notifications ─────────────────────────
+
+### 24. My notifications
+GET {{gateway}}/notifications?limit=20
+Authorization: Bearer {{token}}
+
+### 25. Unread count
+GET {{gateway}}/notifications/unread-count
+Authorization: Bearer {{token}}
+
+### 26. Mark all read
+POST {{gateway}}/notifications/read-all
+Authorization: Bearer {{token}}
+
+
+### ───────────────────────── Reporting (manager / staff) ─────────────────────────
+
+### 27. Manager overview (exposure, SLA breaches, approval rate…) — manager only
+GET {{gateway}}/reports/overview
+Authorization: Bearer {{token}}
+
+### 28. Liability exposure by market / type / status — manager only
+GET {{gateway}}/reports/exposure
+Authorization: Bearer {{token}}
+
+### 29. Status breakdown — staff
+GET {{gateway}}/reports/status-breakdown
+Authorization: Bearer {{token}}
+
+### 30. Officer workload & performance — staff
+GET {{gateway}}/reports/workload
+Authorization: Bearer {{token}}
+
+### 31. 14-day submitted/decided/settled trend — staff
+GET {{gateway}}/reports/trend?days=14
+Authorization: Bearer {{token}}
+
+### 32. Claims past their SLA — staff
+GET {{gateway}}/reports/sla-breaches
+Authorization: Bearer {{token}}
+
+### 33. Recently consumed events (proves the event pipeline is live) — staff
+GET {{gateway}}/reports/events/recent?limit=20
+Authorization: Bearer {{token}}
+
+
+### ───────────────────────── Platform ─────────────────────────
+
+### 34. Aggregated health of every service, plus the active messaging provider (Http | Kafka)
+GET {{gateway}}/system/health
+
+### 35. Individual service health (bypassing the gateway, for debugging only)
+GET http://localhost:5103/health

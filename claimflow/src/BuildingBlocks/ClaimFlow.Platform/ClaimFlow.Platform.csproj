@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Shared infrastructure: hosting defaults, JWT auth, embedded document store, outbox + messaging (HTTP / Kafka). -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClaimFlow.Contracts\ClaimFlow.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Only touched at runtime when Messaging:Provider = Kafka. librdkafka native binaries ship inside this package. -->
+    <PackageReference Include="Confluent.Kafka" Version="2.6.1" />
+  </ItemGroup>
+
+</Project>

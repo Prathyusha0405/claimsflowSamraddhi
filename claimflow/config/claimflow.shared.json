@@ -1,0 +1,29 @@
+{
+  "Messaging": {
+    "Provider": "Http",
+    "InternalKey": "claimflow-internal-dev-key",
+    "Http": {
+      "Subscribers": [ "http://localhost:5104", "http://localhost:5105" ]
+    },
+    "Kafka": {
+      "BootstrapServers": "localhost:9092",
+      "Topic": "claims.events",
+      "DeadLetterTopic": "claims.events.dlq",
+      "Partitions": 3,
+      "ReplicationFactor": 1
+    }
+  },
+  "Jwt": {
+    "Secret": "claimflow-dev-secret-please-change-me-0123456789abcdef",
+    "Issuer": "claimflow-identity",
+    "Audience": "claimflow",
+    "ExpiryMinutes": 480
+  },
+  "Services": {
+    "Identity": "http://localhost:5101",
+    "Policy": "http://localhost:5102",
+    "Claims": "http://localhost:5103",
+    "Notifications": "http://localhost:5104",
+    "Reporting": "http://localhost:5105"
+  }
+}

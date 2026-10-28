@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure contracts: enums, integration events, shared value objects. No infrastructure dependencies. -->
+</Project>
